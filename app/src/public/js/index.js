@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (startBtn) {
         startBtn.addEventListener("click", () => {
-            console.log("시작하기 버튼 클릭됨!"); // 디버깅용 로그
+            console.log("시작하기 버튼 클릭"); // 디버깅용 로그
             window.location.href = "/login"; 
         });
     } else {

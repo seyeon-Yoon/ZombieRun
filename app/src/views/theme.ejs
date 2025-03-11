@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>테마 설정</title>
+
+    <!-- CSS 연결 -->
+    <link rel="stylesheet" href="../css/theme.css"> 
+</head>
+<body>
+    <h1>테마 저장</h1>
+    
+    <form id="theme-form">
+        <label for="theme_name">테마 이름:</label>
+        <input type="text" id="theme_name" name="theme_name" required>
+
+        <label for="theme_code">테마 코드 (4자리 숫자):</label>
+        <input type="text" id="theme_code" name="theme_code" required maxlength="4"
+               placeholder="4자리 숫자 입력">
+
+        <label for="escape_time_minutes">탈출 제한 시간 (분):</label>
+        <input type="text" id="escape_time_minutes" name="escape_time_minutes" required maxlength="2"
+               placeholder="최대 99분">
+
+        <label for="available_hints">사용 가능 힌트 수:</label>
+        <input type="text" id="available_hints" name="available_hints" required maxlength="1"
+               placeholder="0~9개">
+
+        <label for="monitoring_places">모니터링 장소 개수:</label>
+        <input type="text" id="monitoring_places" name="monitoring_places" required maxlength="1"
+               placeholder="0~9개">
+
+        <!-- 맵 추가 (파일 업로드 버튼) -->
+        <div class="map-upload-container">
+            <button id="add-map-btn" type="button">맵 추가</button>
+            <input type="file" id="map-upload" accept=".jpg, .pdf" style="display: none;" multiple>
+        </div>
+
+        <!-- 업로드된 파일 목록 -->
+        <ul id="file-list"></ul>
+
+        <!-- 테마 저장 버튼 -->
+        <button type="submit" id="save_theme">테마 저장</button>
+    </form>
+
+    <!-- JS 연결 -->
+    <script src="../js/theme.js"></script> 
+</body>
+</html>

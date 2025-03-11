@@ -31,14 +31,14 @@ class ThemeStorage {
 
     static getThemes(isAll, ...fields) {
         return fs
-            .readFile("./src/databases/themes.json")
+            .readFile("./src/databases/themes.json")  // 경로 수정
             .then((data) => this.#getThemes(data, isAll, fields))
             .catch(console.error);
     }
 
     static getThemeInfo(themeCode) {
         return fs
-            .readFile("./src/databases/themes.json")
+            .readFile("./src/databases/themes.json")  // 경로 수정
             .then((data) => this.#getThemeInfo(data, themeCode))
             .catch(console.error);
     }
@@ -77,7 +77,7 @@ class ThemeStorage {
             themes.map_files.push(savedFiles); // 🔹 Base64 파일 데이터 추가
             
             // 🔹 themes.json에 저장
-            await fs.writeFile("./src/databases/themes.json", JSON.stringify(themes, null, 2));
+            await fs.writeFile("./src/databases/themes.json", JSON.stringify(themes, null, 2));  // 경로 수정
             return { success: true, uploadedFiles: savedFiles };
         } catch (err) {
             console.error("Theme 저장 중 오류 발생", err);

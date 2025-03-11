@@ -1,28 +1,6 @@
-// "use strict";
-
-// const ThemeStorage = require("./ThemeStorage"); //ThemeStorage
-
-// class Theme {
-//     constructor(body) {
-//         this.body = body;
-//     }
-
-//     async saveTheme() {
-//         const client = this.body;
-//         try {
-//             const response = await ThemeStorage.save(themeData);
-//             return response;
-//         } catch (err) {
-//             return { success: false, msg: err};
-//         }
-//     }
-// }
-
-// module.exports = Theme;
-
 "use strict";
 
-const ThemeStorage = require("./ThemeStorage"); // ThemeStorage 불러오기
+const ThemeStorage = require("./themeStorage"); // 경로 수정
 
 class Theme {
     constructor(body) {

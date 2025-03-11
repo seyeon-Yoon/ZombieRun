@@ -1,9 +1,9 @@
 "use strict";
 
-const fs = require("fs").promises; //파일시스템으로 해당 파일에 접근할 수 있게해줌
+const fs = require("fs").promises; // 파일 시스템 접근
 
 class UserStorage {
-    static #getUserInfo (data, id) { // private한 변수나 메서드는 최상단으로 올리는게 코딩 문화
+    static #getUserInfo(data, id) { // private한 변수나 메서드는 최상단으로 올리는게 코딩 문화
         const users = JSON.parse(data);
         const idx = users.id.indexOf(id);
         const usersKeys = Object.keys(users); // => [id, password, name]
@@ -30,32 +30,20 @@ class UserStorage {
 
     static getUsers(isAll, ...fields) {
         return fs
-            .readFile("./src/databases/users.json")
-            .then((data)=> { //해당로직이 성공했을 때 
+            .readFile("./src/databases/users.json") // 경로 수정
+            .then((data) => { // 해당 로직이 성공했을 때 
                 return this.#getUsers(data, isAll, fields);
             })
-            .catch(console.error); //해당로직이 실패했을 때
+            .catch(console.error); // 해당 로직이 실패했을 때
     }
 
     static getUserInfo(id) {
         return fs
-            .readFile("./src/databases/users.json")
-            .then((data)=> { //해당로직이 성공했을 때 
+            .readFile("./src/databases/users.json") // 경로 수정
+            .then((data) => { // 해당 로직이 성공했을 때 
                 return this.#getUserInfo(data, id);
             })
-            .catch(console.error); //해당로직이 실패했을 때    
-    }
-
-    static async save(userInfo) {
-        const users = await this.getUsers(true);
-        if (users.id.includes(userInfo.id)) {
-            throw ("이미 존재하는 아이디입니다.");
-        }
-        users.id.push(userInfo.id);
-        users.name.push(userInfo.name);
-        users.password.push(userInfo.password);
-        await fs.writeFile("./src/databases/users.json", JSON.stringify(users));
-        return {success: true} ;
+            .catch(console.error); // 해당 로직이 실패했을 때    
     }
 }
 
