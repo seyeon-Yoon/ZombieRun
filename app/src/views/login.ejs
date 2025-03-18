@@ -4,24 +4,88 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+    <title>ZBR-log</title>
 
     <!-- CSS 연결 -->
-    <link rel="stylesheet" href="../css/login.css">
+    <link rel="stylesheet" href="css/basic.css">
+    <link rel="stylesheet" href="css/login.css">
+    <style>
+        .log-btn:disabled {
+            background-color: #909090;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 
 <body>
-    <div class="login-page">
-        <div class="form">
-          <form class="login-form">
-            <input id="id" type="text" placeholder="아이디"/>
-            <input id="password" type="password" placeholder="비밀번호"/>
-            <button id="button" type="submit">로그인</button>
-          </form>
-        </div>
+    <div class="bg">
+        <section class="log-box">
+            <p class="login">LOGIN</p>
+            <form class="log-box" autocomplete="off">
+                <div>
+                    <input id="id" name="id" type="text" placeholder="ID" class="input-form input-font" autocomplete="off">
+                </div>
+                <div>
+                    <input id="password" name="password" type="password" placeholder="PASSWORD" class="input-form input-font" autocomplete="off">
+                </div>
+                <button id="button" type="submit" class="log-btn" disabled>로그인</button>
+            </form>
+        </section>
     </div>
 
-    <!-- JS 연결 -->
-    <script src="../js/login.js" defer></script>
+    <script>
+        "use strict";
+        
+        const id = document.querySelector("#id");
+        const password = document.querySelector("#password");
+        const loginBtn = document.querySelector("#button");
+
+        // 입력값 변경 시 버튼 활성화 상태 체크
+        function checkInputs() {
+            loginBtn.disabled = !(id.value.trim() && password.value.trim());
+        }
+
+        // 입력값 변경 이벤트 리스너 추가
+        id.addEventListener("input", checkInputs);
+        password.addEventListener("input", checkInputs);
+
+        loginBtn.addEventListener("click", login);
+
+        async function login(event) {
+            event.preventDefault(); // 기본 폼 제출 방지
+
+            try {
+                const req = {
+                    id: id.value,
+                    password: password.value,
+                };
+
+                const response = await fetch("/login", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(req)
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.location.href = data.redirect;
+                } else {
+                    alert(data.msg || "로그인에 실패했습니다.");
+                    id.value = "";
+                    password.value = "";
+                    checkInputs();
+                }
+            } catch (err) {
+                console.error("로그인 처리 중 오류가 발생했습니다.");
+                alert("로그인 처리 중 오류가 발생했습니다.");
+                id.value = "";
+                password.value = "";
+                checkInputs();
+            }
+        }
+    </script>
 </body>
 </html>

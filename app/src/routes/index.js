@@ -2,16 +2,77 @@
 
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
+const path = require("path");
+const fs = require('fs').promises;
 const ctrl = require("../controllers/homeController");  // 경로 수정
 const userController = require("../controllers/userController");  // userController 추가
+
+// 업로드 디렉토리 생성
+const createUploadDir = async () => {
+    const uploadDir = path.join(__dirname, "..", "public", "uploads", "maps");
+    try {
+        await fs.access(uploadDir);
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            try {
+                await fs.mkdir(uploadDir, { recursive: true });
+                console.log('업로드 디렉토리 생성 완료:', uploadDir);
+            } catch (err) {
+                console.error('업로드 디렉토리 생성 실패:', err);
+                throw err;
+            }
+        } else {
+            console.error('업로드 디렉토리 접근 오류:', error);
+            throw error;
+        }
+    }
+};
+
+// 서버 시작 시 업로드 디렉토리 생성
+createUploadDir().catch(console.error);
+
+// multer 설정
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        // 상대 경로 대신 절대 경로 사용
+        const uploadDir = path.join(__dirname, "..", "public", "uploads", "maps");
+        console.log('Upload directory:', uploadDir); // 디버깅용 로그
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const filename = file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
+        console.log('Generated filename:', filename); // 디버깅용 로그
+        cb(null, filename);
+    }
+});
+
+const upload = multer({ 
+    storage: storage,
+    fileFilter: function (req, file, cb) {
+        const allowedTypes = ['.jpg', '.jpeg', '.pdf'];
+        const ext = path.extname(file.originalname).toLowerCase();
+        if (allowedTypes.includes(ext)) {
+            cb(null, true);
+        } else {
+            cb(new Error('지원하지 않는 파일 형식입니다. (jpg, pdf만 가능)'));
+        }
+    }
+});
 
 // 라우팅 기능 //output 메서드는 homeController.js에 있음
 router.get('/', ctrl.output.home); // 클라이언트가 '/' 경로로 GET요청을 보낼 때, ctrl(homeController) 파일에 정의된 output.home 메서드를 실행하여 해당 요청에 응답을 처리하라.
 router.get('/login', ctrl.output.login);
-router.get('/theme', ctrl.output.theme);
+router.get('/addTheme', ctrl.output.theme);
+router.get('/mnhome', ctrl.output.mnhome);
+router.get('/keypad', ctrl.output.keypad);
 router.get("/map-popup", ctrl.output.mapPopup);
+router.get("/get-theme-data", ctrl.process.getThemeData);
 
-router.post('/login', userController.login);  // 로그인 처리 로직을 userController로 변경
-router.post('/theme', ctrl.process.theme);
+router.post('/login', ctrl.process.login);  // userController에서 homeController로 변경
+router.post('/addTheme', upload.single('map_file'), ctrl.process.theme);
+router.post('/verify-theme-code', ctrl.process.verifyThemeCode);
+router.post('/save-theme-data', ctrl.process.saveThemeData);
 
 module.exports = router;  // 외부에서도 사용할 수 있도록 내보내는 코드

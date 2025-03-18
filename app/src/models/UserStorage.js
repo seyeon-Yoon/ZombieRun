@@ -1,18 +1,27 @@
 "use strict";
 
-const fs = require("fs").promises; // 파일 시스템 접근
+const fs = require("fs").promises;
+const path = require("path");
 
 class UserStorage {
-    static #getUserInfo(data, id) { // private한 변수나 메서드는 최상단으로 올리는게 코딩 문화
-        const users = JSON.parse(data);
-        const idx = users.id.indexOf(id);
-        const usersKeys = Object.keys(users); // => [id, password, name]
-        const userInfo = usersKeys.reduce((newUser, info) => {
-            newUser[info] = users[info][idx];
-            return newUser;
-        }, {});
+    static #getUserInfo(data, id) {
+        try {
+            const users = JSON.parse(data);
+            const idx = users.id.indexOf(id);
+            
+            if (idx === -1) return {};
+            
+            const usersKeys = Object.keys(users);
+            const userInfo = usersKeys.reduce((newUser, info) => {
+                newUser[info] = users[info][idx];
+                return newUser;
+            }, {});
 
-        return userInfo;
+            return userInfo;
+        } catch (error) {
+            console.error("사용자 정보 처리 중 오류 발생");
+            throw error;
+        }
     }
 
     static #getUsers(data, isAll, fields) {
@@ -28,22 +37,26 @@ class UserStorage {
         return newUsers;
     }
 
-    static getUsers(isAll, ...fields) {
-        return fs
-            .readFile("./src/databases/users.json") // 경로 수정
-            .then((data) => { // 해당 로직이 성공했을 때 
-                return this.#getUsers(data, isAll, fields);
-            })
-            .catch(console.error); // 해당 로직이 실패했을 때
+    static async getUsers(isAll, ...fields) {
+        try {
+            const filePath = path.join(__dirname, "..", "databases", "users.json");
+            const data = await fs.readFile(filePath, "utf8");
+            return this.#getUsers(data, isAll, fields);
+        } catch (error) {
+            console.error("사용자 목록 조회 중 오류 발생");
+            throw error;
+        }
     }
 
-    static getUserInfo(id) {
-        return fs
-            .readFile("./src/databases/users.json") // 경로 수정
-            .then((data) => { // 해당 로직이 성공했을 때 
-                return this.#getUserInfo(data, id);
-            })
-            .catch(console.error); // 해당 로직이 실패했을 때    
+    static async getUserInfo(id) {
+        try {
+            const filePath = path.join(__dirname, "..", "databases", "users.json");
+            const data = await fs.readFile(filePath, "utf8");
+            return this.#getUserInfo(data, id);
+        } catch (error) {
+            console.error("사용자 정보 조회 중 오류 발생");
+            throw error;
+        }
     }
 }
 

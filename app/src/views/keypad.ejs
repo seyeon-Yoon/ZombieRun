@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="css/keypad.css" rel="stylesheet">
+    <title>키패드</title>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">테마 코드 입력</h1>
+        <p class="subtitle">4자리 코드를 입력해주세요</p>
+        
+        <!-- 코드 표시 영역 -->
+        <div class="code-display">
+            <div class="code-digit">
+                <span class="digit-text"></span>
+            </div>
+            <div class="code-digit">
+                <span class="digit-text"></span>
+            </div>
+            <div class="code-digit">
+                <span class="digit-text"></span>
+            </div>
+            <div class="code-digit">
+                <span class="digit-text"></span>
+            </div>
+        </div>
+        
+        <!-- 키패드 -->
+        <div class="keypad">
+            <button class="key" onclick="appendNumber('1')">1</button>
+            <button class="key" onclick="appendNumber('2')">2</button>
+            <button class="key" onclick="appendNumber('3')">3</button>
+            <button class="key" onclick="appendNumber('4')">4</button>
+            <button class="key" onclick="appendNumber('5')">5</button>
+            <button class="key" onclick="appendNumber('6')">6</button>
+            <button class="key" onclick="appendNumber('7')">7</button>
+            <button class="key" onclick="appendNumber('8')">8</button>
+            <button class="key" onclick="appendNumber('9')">9</button>
+            <button class="key delete" onclick="deleteNumber()">←</button>
+            <button class="key" onclick="appendNumber('0')">0</button>
+        </div>
+    </div>
+
+    <script>
+        const digits = document.querySelectorAll('.code-digit');
+        const digitTexts = document.querySelectorAll('.digit-text');
+        let currentCode = '';
+        const maxLength = 4;
+        
+        function appendNumber(num) {
+            if (currentCode.length >= maxLength) return;
+            
+            currentCode += num;
+            updateDisplay();
+            
+            // 버튼 애니메이션
+            const button = event.target;
+            button.style.background = 'white';
+            button.style.color = 'black';
+            setTimeout(() => {
+                button.style.background = 'transparent';
+                button.style.color = 'white';
+            }, 100);
+
+            // 4자리 입력 완료시 자동 확인
+            if (currentCode.length === maxLength) {
+                setTimeout(verifyCode, 200);
+            }
+        }
+        
+        function deleteNumber() {
+            if (currentCode.length === 0) return;
+            
+            currentCode = currentCode.slice(0, -1);
+            updateDisplay();
+            
+            // 버튼 애니메이션
+            const button = event.target;
+            button.style.background = 'white';
+            button.style.color = 'black';
+            setTimeout(() => {
+                button.style.background = 'transparent';
+                button.style.color = 'white';
+            }, 100);
+        }
+        
+        function updateDisplay() {
+            digits.forEach((digit, index) => {
+                digitTexts[index].textContent = index < currentCode.length ? currentCode[index] : '';
+            });
+        }
+        
+        function shakeDisplay() {
+            const display = document.querySelector('.code-display');
+            display.style.animation = 'none';
+            display.offsetHeight; // 리플로우 강제
+            display.style.animation = 'shake 0.5s ease';
+        }
+
+        async function verifyCode() {
+            try {
+                const response = await fetch('/verify-theme-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ theme_code: currentCode })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // 성공 시 테마 코드를 URL 파라미터로 전달하며 리다이렉트
+                    window.location.href = `/mnhome?theme_code=${currentCode}`;
+                } else {
+                    // 실패 시 처리
+                    alert('등록되지 않은 테마 코드입니다.');
+                    currentCode = '';
+                    updateDisplay();
+                    shakeDisplay();
+                }
+            } catch (error) {
+                console.error('테마 코드 확인 중 오류 발생:', error);
+                alert('테마 코드 확인 중 오류가 발생했습니다.');
+                currentCode = '';
+                updateDisplay();
+            }
+        }
+        
+        // 키보드 입력 처리
+        document.addEventListener('keydown', (e) => {
+            if (e.key >= '0' && e.key <= '9') {
+                appendNumber(e.key);
+            } else if (e.key === 'Backspace') {
+                deleteNumber();
+            }
+        });
+    </script>
+</body>
+</html> 

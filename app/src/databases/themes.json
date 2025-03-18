@@ -1,17 +1,38 @@
 {
   "theme_name": [
-
+    "테마1"
   ],
   "theme_code": [
-
+    "1234"
   ],
   "escape_time_minutes": [
-
+    "60"
   ],
   "available_hints": [
-
+    "5"
   ],
   "monitoring_places": [
-
-  ]
+    "4"
+  ],
+  "map_file": [
+    "/uploads/maps/map1.jpg"
+  ],
+  "hints": {
+    "1234": [
+      {
+        "code": "1234",
+        "progress": 1,
+        "content": "1",
+        "answer": "1"
+      }
+    ]
+  },
+  "places": {
+    "1234": [
+      "g202",
+      "g203",
+      "g204",
+      "g205"
+    ]
+  }
 }

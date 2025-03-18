@@ -1,0 +1,379 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Pretendard';
+}
+
+body {
+    background-color: #2E2E2E;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.container {
+    width: 1440px;
+    height: 1024px;
+    padding: 20px;
+}
+
+/* 상단 정보 영역 */
+.info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.nav-and-theme {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.nav-button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 5px 10px;
+}
+
+.theme-title {
+    color: white;
+    font-size: 20px;
+    font-weight: normal;
+}
+
+.notice-button {
+    background-color: #3CA96F;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 15px;
+    cursor: pointer;
+}
+
+/* 맵/시간/힌트 정보 행 */
+.info-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+/* 맵 영역 */
+.map-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 20%; /* 전체 너비의 1/5 */
+}
+
+.map-input-container {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.map-input {
+    width: 100%;
+    height: 35px;
+    background-color: #D9D9D9;
+    border: none;
+    border-radius: 5px;
+    padding: 0 10px;
+    cursor: pointer;
+}
+
+.view-map-btn {
+    position: absolute;
+    right: 5px;
+    padding: 4px 8px;
+    background-color: #3CA96F;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.view-map-btn:hover {
+    background-color: #2f8054;
+}
+
+/* 맵 이미지 팝업 */
+.map-popup {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.map-popup.show {
+    display: flex;
+}
+
+.map-popup-content {
+    position: relative;
+    max-width: 90%;
+    max-height: 90%;
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.map-popup-content img {
+    max-width: 100%;
+    max-height: calc(90vh - 40px);
+    object-fit: contain;
+}
+
+.close-popup {
+    position: absolute;
+    top: -15px;
+    right: -15px;
+    width: 30px;
+    height: 30px;
+    background-color: #3CA96F;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 1;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.close-popup:hover {
+    background-color: #2f8054;
+}
+
+/* 시간/힌트 정보 */
+.time-hint-info {
+    display: flex;
+    gap: 20px;
+    margin-left: auto; /* 오른쪽 정렬 */
+}
+
+.time-info, .hint-info {
+    background-color: #D9D9D9;
+    padding: 15px 20px;
+    border-radius: 5px;
+    color: black;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.time-info div:first-child,
+.hint-info div:first-child {
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.time-info div:last-child,
+.hint-info div:last-child {
+    font-size: 16px;
+}
+
+.time-info strong,
+.hint-info strong {
+    font-size: 20px;
+    margin-right: 2px;
+}
+
+/* 힌트 목록 영역 */
+.hint-list {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.hint-list table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.hint-list th, .hint-list td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hint-list th {
+    color: #3CA96F;
+}
+
+/* 모니터링 장소 영역 */
+.monitoring-section {
+    margin-top: 20px;
+}
+
+.monitoring-places {
+    display: flex;
+    gap: 20px;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
+
+.monitoring-place {
+    flex: 1;
+    background-color: #D9D9D9;
+    border-radius: 5px;
+    padding: 5px;
+    text-align: center;
+    color: black;
+    position: relative;
+    z-index: 1;
+    min-width: 120px;
+}
+
+.place-name-input {
+    width: 100%;
+    background: none;
+    border: none;
+    text-align: center;
+    color: black;
+    font-size: 14px;
+    padding: 5px;
+}
+
+.place-name-input:focus {
+    outline: none;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+}
+
+.place-name-input::placeholder {
+    color: #333;
+    opacity: 1;
+}
+
+.place-name-input:focus::placeholder {
+    opacity: 0.7;
+}
+
+/* 연결선 */
+.monitoring-places::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 2px;
+    background-color: rgba(255, 255, 255, 0.3);
+    z-index: 0;
+}
+
+/* 저장 버튼 */
+.save-button {
+    display: block;
+    width: 200px;
+    height: 40px;
+    margin: 20px auto;
+    background-color: #3CA96F;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.save-button:hover {
+    background-color: #2f8054;
+}
+
+/* 힌트 추가 폼 */
+.hint-add-form {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hint-add-form input {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.hint-add-form input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+#hintCode {
+    width: 100px;
+}
+
+#progressRate {
+    width: 80px;
+}
+
+#hintContent, #answerContent {
+    flex: 1;
+}
+
+.add-hint-btn {
+    padding: 8px 15px;
+    background-color: #3CA96F;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.add-hint-btn:hover {
+    background-color: #2f8054;
+}
+
+.delete-hint-btn {
+    padding: 4px 8px;
+    background-color: transparent;
+    color: #3CA96F;
+    border: 1px solid #3CA96F;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.delete-hint-btn:hover {
+    background-color: #3CA96F;
+    color: white;
+}
+
+@media (max-width: 1440px) {
+    .container {
+        width: 100%;
+        height: auto;
+        min-height: 100vh;
+    }
+    
+    .info-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .monitoring-places {
+        grid-template-columns: 1fr;
+    }
+}

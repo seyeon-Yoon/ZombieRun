@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="css/basic.css" rel="stylesheet">
+    <link href="css/mnHome.css" rel="stylesheet">
+    <title>테마 아름</title>
+</head>
+<body>
+    <div class="container">
+        <!-- 상단 정보 영역 -->
+        <div class="info-header">
+            <div class="nav-and-theme">
+                <button class="nav-button">≡</button>
+                <h1 class="theme-title"><%= selectedTheme ? `${selectedTheme.theme_name} (${selectedTheme.theme_code})` : '테마 정보 없음' %></h1>
+            </div>
+            <button class="notice-button">공지사항 등록</button>
+        </div>
+
+        <!-- 맵/시간/힌트 정보 영역 -->
+        <div class="info-row">
+            <div class="map-section">
+                <span class="map-label">맵</span>
+                <div class="map-input-container">
+                    <input type="text" class="map-input" value="<%= selectedTheme && selectedTheme.map_file ? selectedTheme.map_file.split('/').pop() : '' %>" readonly>
+                    <% if (selectedTheme && selectedTheme.map_file) { %>
+                        <button class="view-map-btn">보기</button>
+                    <% } %>
+                </div>
+            </div>
+            <div class="time-hint-info">
+                <div class="time-info">
+                    <div>탈출 제한 시간</div>
+                    <div><strong><%= selectedTheme ? selectedTheme.escape_time_minutes : '0' %></strong>분</div>
+                </div>
+                <div class="hint-info">
+                    <div>사용 가능한 힌트 수</div>
+                    <div><strong><%= selectedTheme ? selectedTheme.available_hints : '0' %></strong>개</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 힌트 목록 -->
+        <div class="hint-list">
+            <table>
+                <thead>
+                    <tr>
+                        <th>힌트코드</th>
+                        <th>진행률</th>
+                        <th>힌트 내용</th>
+                        <th>정답 내용</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="hintTableBody">
+                    <!-- 힌트 목록이 여기에 동적으로 추가됩니다 -->
+                </tbody>
+            </table>
+            
+            <!-- 힌트 추가 폼 -->
+            <div class="hint-add-form">
+                <input type="text" id="hintCode" placeholder="힌트코드 (4자리)" maxlength="4" pattern="\d{4}">
+                <input type="text" id="progressRate" placeholder="진행률 (%)" maxlength="2">
+                <input type="text" id="hintContent" placeholder="힌트 내용">
+                <input type="text" id="answerContent" placeholder="정답 내용">
+                <button id="addHintBtn" class="add-hint-btn">추가</button>
+            </div>
+        </div>
+
+        <!-- 모니터링 장소 -->
+        <div class="monitoring-section">
+            <div class="monitoring-places">
+                <% if (selectedTheme) { %>
+                    <% for(let i = 0; i < parseInt(selectedTheme.monitoring_places); i++) { %>
+                        <div class="monitoring-place">
+                            <input type="text" class="place-name-input" placeholder="장소명 입력">
+                        </div>
+                    <% } %>
+                <% } else { %>
+                    <div class="monitoring-place">
+                        <input type="text" class="place-name-input" placeholder="장소명 입력">
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- 저장 버튼 -->
+        <button class="save-button">저장</button>
+    </div>
+
+    <!-- 맵 이미지 팝업 -->
+    <div class="map-popup" id="mapPopup">
+        <div class="map-popup-content">
+            <button class="close-popup">&times;</button>
+            <img id="mapImage" src="" alt="맵 이미지">
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const themeCode = urlParams.get('theme_code');
+            
+            if (!themeCode) {
+                window.location.href = '/keypad';
+            }
+
+            // 전역 변수들을 먼저 정의
+            const hintTableBody = document.getElementById('hintTableBody');
+            const addHintBtn = document.getElementById('addHintBtn');
+            const hintCodeInput = document.getElementById('hintCode');
+            const progressRateInput = document.getElementById('progressRate');
+            const hintContentInput = document.getElementById('hintContent');
+            const answerContentInput = document.getElementById('answerContent');
+            const mapPopup = document.getElementById('mapPopup');
+            const mapImage = document.getElementById('mapImage');
+            const viewMapBtn = document.querySelector('.view-map-btn');
+            const closePopupBtn = document.querySelector('.close-popup');
+
+            // 저장된 힌트와 장소 데이터 로드
+            async function loadSavedData() {
+                try {
+                    const response = await fetch(`/get-theme-data?theme_code=${themeCode}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        // 저장된 힌트 데이터 표시
+                        if (data.hints && data.hints[themeCode]) {
+                            data.hints[themeCode].forEach(hint => {
+                                const newRow = document.createElement('tr');
+                                newRow.innerHTML = `
+                                    <td>${hint.code}</td>
+                                    <td>${hint.progress}%</td>
+                                    <td>${hint.content}</td>
+                                    <td>${hint.answer}</td>
+                                    <td>
+                                        <button class="delete-hint-btn" onclick="this.closest('tr').remove()">삭제</button>
+                                    </td>
+                                `;
+                                hintTableBody.appendChild(newRow);
+                            });
+                        }
+
+                        // 저장된 장소 데이터 표시
+                        if (data.places && data.places[themeCode]) {
+                            const placeInputs = document.querySelectorAll('.place-name-input');
+                            data.places[themeCode].forEach((place, index) => {
+                                if (placeInputs[index]) {
+                                    placeInputs[index].value = place || '';
+                                }
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('데이터 로드 중 오류 발생:', error);
+                }
+            }
+
+            // 페이지 로드 시 저장된 데이터 로드
+            loadSavedData();
+
+            // 맵 보기 버튼 클릭 시
+            if (viewMapBtn) {
+                viewMapBtn.addEventListener('click', function() {
+                    const mapFile = '<%= selectedTheme && selectedTheme.map_file ? selectedTheme.map_file : "" %>';
+                    if (mapFile) {
+                        mapImage.src = mapFile;
+                        mapPopup.classList.add('show');
+                    }
+                });
+            }
+
+            // 팝업 닫기 버튼 클릭 시
+            closePopupBtn.addEventListener('click', function() {
+                mapPopup.classList.remove('show');
+            });
+
+            // 팝업 바깥 영역 클릭 시 닫기
+            mapPopup.addEventListener('click', function(e) {
+                if (e.target === mapPopup) {
+                    mapPopup.classList.remove('show');
+                }
+            });
+
+            // 힌트코드 입력 제한 (숫자만)
+            hintCodeInput.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, '');
+            });
+
+            // 진행률 입력 제한 (숫자만, 0-99)
+            progressRateInput.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, '');
+                let value = parseInt(this.value);
+                if (value > 99) this.value = 99;
+                if (this.value.length > 2) this.value = this.value.slice(0, 2);
+            });
+
+            // 힌트코드 중복 체크 함수
+            function isHintCodeDuplicate(code) {
+                const existingCodes = Array.from(hintTableBody.querySelectorAll('td:first-child'))
+                    .map(td => td.textContent);
+                return existingCodes.includes(code);
+            }
+
+            // 장소명 수집 함수
+            function collectPlaces() {
+                return Array.from(document.querySelectorAll('.place-name-input')).map(input => {
+                    return input.value.trim() || null; // 빈 문자열은 null로 처리
+                });
+            }
+
+            // 힌트 추가 버튼 클릭 시
+            addHintBtn.addEventListener('click', async function() {
+                // 입력값 검증
+                if (hintCodeInput.value.length !== 4) {
+                    alert('힌트코드는 4자리 숫자여야 합니다.');
+                    return;
+                }
+
+                // 힌트코드 중복 체크
+                if (isHintCodeDuplicate(hintCodeInput.value)) {
+                    alert('이미 존재하는 힌트코드입니다.');
+                    return;
+                }
+
+                if (!progressRateInput.value || parseInt(progressRateInput.value) < 0 || parseInt(progressRateInput.value) > 99) {
+                    alert('진행률은 0-99 사이의 숫자여야 합니다.');
+                    return;
+                }
+
+                if (!hintContentInput.value || !answerContentInput.value) {
+                    alert('힌트 내용과 정답 내용을 모두 입력해주세요.');
+                    return;
+                }
+
+                // 새로운 힌트 행 추가
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td>${hintCodeInput.value}</td>
+                    <td>${progressRateInput.value}%</td>
+                    <td>${hintContentInput.value}</td>
+                    <td>${answerContentInput.value}</td>
+                    <td>
+                        <button class="delete-hint-btn" onclick="this.closest('tr').remove()">삭제</button>
+                    </td>
+                `;
+                
+                // 서버로 데이터 전송
+                try {
+                    // 새로운 힌트 데이터 생성
+                    const newHint = {
+                        hint_code: hintCodeInput.value,
+                        progress_rate: parseInt(progressRateInput.value),
+                        hint_content: hintContentInput.value,
+                        answer_content: answerContentInput.value
+                    };
+
+                    // 기존 힌트 데이터 수집
+                    const existingHints = Array.from(document.querySelectorAll('#hintTableBody tr')).map(row => {
+                        const cells = row.querySelectorAll('td');
+                        return {
+                            hint_code: cells[0].textContent,
+                            progress_rate: parseInt(cells[1].textContent.replace('%', '')),
+                            hint_content: cells[2].textContent,
+                            answer_content: cells[3].textContent
+                        };
+                    });
+
+                    // 새로운 힌트를 포함한 전체 힌트 배열 생성
+                    const hints = [...existingHints, newHint];
+
+                    const places = collectPlaces();
+
+                    const response = await fetch('/save-theme-data', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            theme_code: themeCode,
+                            hints: hints,
+                            places: places
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('서버 응답이 실패했습니다.');
+                    }
+
+                    const result = await response.json();
+                    if (!result.success) {
+                        throw new Error(result.msg || '저장에 실패했습니다.');
+                    }
+
+                    // 저장 성공 시에만 테이블에 행 추가
+                    hintTableBody.appendChild(newRow);
+                    alert('등록되었습니다.');
+
+                    // 입력 필드 초기화
+                    hintCodeInput.value = '';
+                    progressRateInput.value = '';
+                    hintContentInput.value = '';
+                    answerContentInput.value = '';
+                } catch (error) {
+                    console.error('힌트 저장 중 오류:', error);
+                    alert('힌트 저장 중 오류가 발생했습니다: ' + error.message);
+                }
+            });
+
+            // 저장 버튼 클릭 시
+            const saveButton = document.querySelector('.save-button');
+            saveButton.addEventListener('click', async function() {
+                try {
+                    const hints = Array.from(document.querySelectorAll('#hintTableBody tr')).map(row => {
+                        const cells = row.querySelectorAll('td');
+                        return {
+                            hint_code: cells[0].textContent,
+                            progress_rate: parseInt(cells[1].textContent.replace('%', '')),
+                            hint_content: cells[2].textContent,
+                            answer_content: cells[3].textContent
+                        };
+                    });
+
+                    const places = collectPlaces();
+
+                    const response = await fetch('/save-theme-data', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            theme_code: themeCode,
+                            hints: hints,
+                            places: places
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('서버 응답이 실패했습니다.');
+                    }
+
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('저장되었습니다.');
+                    } else {
+                        throw new Error(result.msg || '저장에 실패했습니다.');
+                    }
+                } catch (error) {
+                    console.error('저장 중 오류:', error);
+                    alert('저장 중 오류가 발생했습니다: ' + error.message);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

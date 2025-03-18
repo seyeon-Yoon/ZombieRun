@@ -9,12 +9,13 @@ class Theme {
 
     async saveTheme() {
         try {
-            console.log("저장할 테마 데이터:", this.body); // 🔹 디버깅 로그 추가
-            const response = await ThemeStorage.save(this.body); // ✅ ThemeStorage의 save() 호출
+            const response = await ThemeStorage.save(this.body);
             return response;
         } catch (err) {
-            console.error("Theme 저장 중 오류 발생:", err);
-            return { success: false, msg: err.message || String(err) };
+            return { 
+                success: false, 
+                message: err.message || "테마 저장 중 오류가 발생했습니다." 
+            };
         }
     }
 }

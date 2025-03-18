@@ -3,7 +3,9 @@
 const { response } = require("express");
 const User = require("../models/user");  
 const Theme = require("../models/theme");
-const ThemeStorage = require("../models/themeStorage");  
+const ThemeStorage = require("../models/themeStorage");
+const fs = require('fs').promises;
+const path = require('path');
 
 const output = {
     home: (req, res) => {
@@ -11,68 +13,265 @@ const output = {
     },
 
     login: (req, res) => {
-        res.render('../views/login');
+        res.render('login'); // 단순히 로그인 페이지만 렌더링
     },
 
     theme: async (req, res) => {
         try {
-            const themes = await ThemeStorage.getThemes();
-            res.render('../views/theme'); //   /theme.ejs를 불러와라 (데이터 포함)
+            const themes = await ThemeStorage.getThemes(true); // 모든 테마 데이터 로드
+            res.render('addTheme', { themes });
         } catch (error) {
             console.error("테마 데이터를 불러오는 중 오류 발생:", error);
             res.status(500).send("테마 데이터를 불러올 수 없습니다.");
         }
     },
 
+    mnhome: async (req, res) => {
+        try {
+            const themes = await ThemeStorage.getThemes(true);
+            const themeCode = req.query.theme_code; // URL 파라미터에서 테마 코드 가져오기
+            
+            // 선택된 테마 찾기
+            const selectedTheme = themes.find(theme => theme.theme_code === themeCode);
+            
+            res.render('mnhome', { 
+                themes,
+                selectedTheme: selectedTheme || null,
+                monitoring_places: selectedTheme ? parseInt(selectedTheme.monitoring_places) : 0
+            });
+        } catch (error) {
+            console.error("테마 데이터를 불러오는 중 오류 발생:", error);
+            res.status(500).send("테마 데이터를 불러올 수 없습니다.");
+        }
+    },
+
+    keypad: (req, res) => {
+        res.render('keypad');
+    },
+
     mapPopup: (req, res) => {
-        res.render('views/mapPopup'); // mapPopup.ejs를 불러와라
+        res.render('mapPopup'); // mapPopup.ejs를 불러와라
     }
 };
 
 //themeController.js
 const process = {
     login: async (req, res) => {
-        const user = new User(req.body);
-        const response = await user.login();
-        return res.json(response);
+        try {
+            const user = new User(req.body);
+            const loginResponse = await user.login();
+            
+            if (loginResponse.success) {
+                // 테마 존재 여부 확인
+                const themes = await ThemeStorage.getThemes(true);
+                const hasThemes = themes && themes.length > 0;
+                
+                // 리다이렉션 경로 설정
+                const redirectPath = hasThemes ? '/keypad' : '/addTheme';
+                console.log("리다이렉션 경로:", redirectPath);
+                
+                return res.json({
+                    success: true,
+                    msg: "로그인 성공",
+                    redirect: redirectPath
+                });
+            }
+            
+            return res.json({
+                success: false,
+                msg: loginResponse.msg || "아이디 또는 비밀번호가 일치하지 않습니다."
+            });
+        } catch (error) {
+            console.error("로그인 처리 중 오류 발생:", error);
+            return res.json({ 
+                success: false, 
+                msg: "로그인 처리 중 오류가 발생했습니다."
+            });
+        }
     },
 
     theme: async (req, res) => {
-        console.log("서버로 받은 테마 데이터:", req.body); // 디버깅용 로그 추가
+        try {
+            const { theme_name, theme_code, escape_time_minutes, available_hints, monitoring_places } = req.body;
+            
+            // 유효성 검사
+            if (!theme_name || !theme_code || !escape_time_minutes || !available_hints || !monitoring_places) {
+                return res.json({ success: false, message: "모든 필수 항목을 입력해주세요." });
+            }
 
-        const { theme_name, theme_code, escape_time_minutes, available_hints, monitoring_places } = req.body;
-        
-        console.log("서버에서 받은 theme_code:", theme_code);
-        
-        const parsedThemeCode = parseInt(theme_code, 10);  // 문자열을 정수로 변환
-        
-        console.log("변환된 theme_code:", parsedThemeCode); // 변환된 값 확인
-        
-        //유효성검사
-        if (!/^\d{4}$/.test(theme_code) || isNaN(parsedThemeCode) || parsedThemeCode <= 0) {
-            return res.json({ success: false, msg: "테마 코드는 숫자 4자리만 입력 가능합니다." });
-        }
+            if (!/^\d{4}$/.test(theme_code)) {
+                return res.json({ success: false, message: "테마 코드는 숫자 4자리만 입력 가능합니다." });
+            }
 
-        if (!/^\d{1,2}$/.test(String(escape_time_minutes)) || parseInt(escape_time_minutes) > 99) {
-            return res.json({ success: false, msg: "탈출 제한 시간은 숫자 2자리까지 입력 가능합니다. (0~99)" });
+            if (!/^\d{1,2}$/.test(escape_time_minutes) || parseInt(escape_time_minutes) > 99) {
+                return res.json({ success: false, message: "탈출 제한 시간은 숫자 2자리까지 입력 가능합니다. (0~99)" });
+            }
+            
+            if (!/^\d$/.test(available_hints)) {
+                return res.json({ success: false, message: "사용 가능 힌트 수는 숫자 1자리만 입력 가능합니다." });
+            }
+           
+            if (!/^\d$/.test(monitoring_places)) {
+                return res.json({ success: false, message: "모니터링 장소 개수는 숫자 1자리만 입력 가능합니다." });
+            }
+
+            // 파일 정보 추가
+            let mapFilePath = null;
+            if (req.file) {
+                mapFilePath = '/uploads/maps/' + req.file.filename;
+            }
+
+            // 테마 데이터 생성
+            const themeData = {
+                theme_name,
+                theme_code,
+                escape_time_minutes,
+                available_hints,
+                monitoring_places,
+                map_file: mapFilePath
+            };
+
+            const theme = new Theme(themeData);
+            const response = await theme.saveTheme();
+
+            if (!response.success && req.file) {
+                // 저장 실패 시 업로드된 파일 삭제
+                const fullPath = path.join(__dirname, "..", "public", mapFilePath);
+                try {
+                    await fs.unlink(fullPath);
+                } catch (error) {
+                    console.error("파일 삭제 중 오류 발생:", error);
+                }
+            }
+
+            return res.json(response);
+        } catch (error) {
+            console.error("테마 저장 중 오류 발생:", error);
+            return res.json({ 
+                success: false, 
+                message: "테마 저장 중 오류가 발생했습니다: " + error.message 
+            });
         }
+    },
+
+    verifyThemeCode: async (req, res) => {
+        try {
+            const { theme_code } = req.body;
+            
+            // 테마 코드 유효성 검사
+            if (!theme_code || !/^\d{4}$/.test(theme_code)) {
+                return res.json({ 
+                    success: false, 
+                    message: "올바르지 않은 테마 코드 형식입니다." 
+                });
+            }
+
+            // 테마 코드 존재 여부 확인
+            const themes = await ThemeStorage.getThemes(true);
+            console.log('입력된 테마 코드:', theme_code);
+            console.log('저장된 테마 목록:', themes);
+            
+            // 테마 배열에서 테마 코드 확인
+            const themeExists = themes.some(theme => theme.theme_code === theme_code);
+
+            return res.json({ 
+                success: themeExists,
+                message: themeExists ? "테마가 확인되었습니다." : "등록되지 않은 테마 코드입니다."
+            });
+        } catch (error) {
+            console.error("테마 코드 확인 중 오류 발생:", error);
+            return res.json({ 
+                success: false, 
+                message: "테마 코드 확인 중 오류가 발생했습니다." 
+            });
+        }
+    },
+
+    saveThemeData: async (req, res) => {
+        const { theme_code, hints, places } = req.body;
         
-        if (!/^\d$/.test(String(available_hints))) {
-            return res.json({ success: false, msg: "사용 가능 힌트 수는 숫자 1자리만 입력 가능합니다." });
-        }
-       
-        if (!/^\d$/.test(String(monitoring_places))) {
-            return res.json({ success: false, msg: "모니터링 장소 개수는 숫자 1자리만 입력 가능합니다." });
-        }
+        try {
+            console.log('=== saveThemeData 시작 ===');
+            console.log('1. 받은 데이터:', {
+                theme_code,
+                hints: JSON.stringify(hints, null, 2),
+                places: JSON.stringify(places, null, 2)
+            });
 
-        const theme = new Theme(req.body);
-        if (typeof theme.saveTheme !== 'function') {
-            console.error("saveTheme()가 존재하지 않음.");
-            return res.json({ success: false, msg: "saveTheme is not a function" });
-        }
+            // 입력값 검증
+            if (!theme_code || !Array.isArray(hints) || !Array.isArray(places)) {
+                console.log('2. 데이터 형식 오류:', { 
+                    theme_code: !!theme_code,
+                    hintsIsArray: Array.isArray(hints),
+                    placesIsArray: Array.isArray(places)
+                });
+                return res.status(400).json({ 
+                    success: false, 
+                    msg: "잘못된 데이터 형식입니다." 
+                });
+            }
 
-        const response = await theme.saveTheme();
-        return res.json(response);
+            // 힌트 데이터 형식 변환
+            const convertedHints = hints.map(hint => {
+                console.log('3. 변환 전 힌트 데이터:', hint);
+                const converted = {
+                    code: hint.hint_code,
+                    progress: parseInt(String(hint.progress_rate).replace('%', '')),
+                    content: hint.hint_content,
+                    answer: hint.answer_content
+                };
+                console.log('4. 변환 후 힌트 데이터:', converted);
+                return converted;
+            });
+
+            console.log('5. 변환된 전체 힌트:', JSON.stringify(convertedHints, null, 2));
+
+            // ThemeStorage를 통해 데이터 저장
+            const result = await ThemeStorage.saveThemeData(theme_code, convertedHints, places);
+            console.log('6. 저장 결과:', result);
+            
+            if (result.success) {
+                console.log('7. 저장 성공');
+                return res.json({ success: true, msg: "테마 데이터가 성공적으로 저장되었습니다." });
+            } else {
+                console.log('7. 저장 실패:', result.message);
+                throw new Error(result.message || "저장에 실패했습니다.");
+            }
+        } catch (err) {
+            console.error('8. 에러 발생:', err);
+            console.error('에러 스택:', err.stack);
+            return res.status(500).json({ 
+                success: false, 
+                msg: err.message || "테마 데이터 저장 중 오류가 발생했습니다." 
+            });
+        }
+    },
+
+    getThemeData: async (req, res) => {
+        const { theme_code } = req.query;
+        
+        try {
+            if (!theme_code) {
+                return res.status(400).json({ 
+                    success: false, 
+                    msg: "테마 코드가 필요합니다." 
+                });
+            }
+
+            const themes = await ThemeStorage.getThemes(false);
+            
+            return res.json({
+                success: true,
+                hints: { [theme_code]: themes.hints[theme_code] || [] },
+                places: { [theme_code]: themes.places[theme_code] || [] }
+            });
+        } catch (error) {
+            console.error("테마 데이터 조회 중 오류:", error);
+            return res.status(500).json({
+                success: false,
+                msg: "테마 데이터 조회 중 오류가 발생했습니다."
+            });
+        }
     }
 };
 

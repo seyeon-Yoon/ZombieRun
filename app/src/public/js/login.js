@@ -25,7 +25,7 @@ function login(event) {
         .then((res) => res.json())
         .then((res) => {
             if (res.success) {
-                location.href = '/theme';  // 로그인 성공 시 /theme 페이지로 이동
+                location.href = '/addTheme';  // 로그인 성공 시 /addTheme 페이지로 이동
             } else {
                 alert(res.msg);  // 로그인 실패 시 오류 메시지
             }
