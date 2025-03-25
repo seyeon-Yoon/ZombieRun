@@ -7,16 +7,51 @@
         const fileListContainer = document.querySelector("#file-list"); // 업로드된 파일 목록
         const themeCodeInput = document.querySelector("#theme_code"); // 테마 코드 입력 필드
         const saveThemeButton = document.querySelector("#save_theme"); // 테마 저장 버튼
+        const escapeTimeInput = document.querySelector("#escape_time_minutes");
+        const availableHintsInput = document.querySelector("#available_hints");
+        const monitoringPlacesInput = document.querySelector("#monitoring_places");
 
-        if (!themeForm || !addMapBtn || !mapUploadInput || !fileListContainer || !themeCodeInput || !saveThemeButton) {
+        if (!themeForm || !addMapBtn || !mapUploadInput || !fileListContainer || !themeCodeInput || !saveThemeButton || 
+            !escapeTimeInput || !availableHintsInput || !monitoringPlacesInput) {
             console.error("필수 요소가 누락되었습니다. 스크립트 실행을 중단합니다.");
             return;
         }
 
+        // 숫자 입력 필드 유효성 검사 함수
+        function validateNumberInput(input) {
+            input.addEventListener("input", (event) => {
+                let value = event.target.value.replace(/\D/g, ""); // 숫자 이외의 문자 제거
+                if (value === "") {
+                    event.target.value = "";
+                } else {
+                    event.target.value = parseInt(value);
+                }
+                checkFormValidity();
+            });
+        }
+
+        // 폼 유효성 검사 함수
+        function checkFormValidity() {
+            const themeCodeValue = themeCodeInput.value.trim();
+            const themeName = document.querySelector("#theme_name").value.trim();
+            const escapeTime = escapeTimeInput.value.trim();
+            const availableHints = availableHintsInput.value.trim();
+            const monitoringPlaces = monitoringPlacesInput.value.trim();
+
+            const isValid = themeCodeValue.length === 4 && 
+                          themeName.length > 0 && 
+                          escapeTime.length > 0 && 
+                          availableHints.length > 0 && 
+                          monitoringPlaces.length > 0;
+
+            saveThemeButton.disabled = !isValid;
+        }
+
         // ✅ 테마 코드 입력 시 숫자만 허용 (최대 4자리)
         themeCodeInput.addEventListener("input", (event) => {
-            let value = event.target.value.replace(/\D/g, ""); // 숫자 이외의 문자 제거
-            event.target.value = value.slice(0, 4); // 최대 4자리 제한
+            let value = event.target.value.replace(/\D/g, "");
+            event.target.value = value.slice(0, 4);
+            checkFormValidity();
         });
 
         // ✅ "맵 추가" 버튼 클릭 시 파일 업로드 창 열기
@@ -96,6 +131,14 @@
             }
         });
 
+        // 테마 이름 입력 시 유효성 검사
+        document.querySelector("#theme_name").addEventListener("input", checkFormValidity);
+
+        // 숫자 입력 필드 유효성 검사 적용
+        validateNumberInput(escapeTimeInput);
+        validateNumberInput(availableHintsInput);
+        validateNumberInput(monitoringPlacesInput);
+
         //테마 저장 기능
         themeForm.addEventListener("submit", async (event) => {
             event.preventDefault(); // 기본 제출 방지
@@ -127,24 +170,19 @@
             saveThemeButton.disabled = true;
 
             try {
-                const response = await fetch("/addTheme", {
-                    method: "POST",
-                    body: themeData,
+                const response = await fetch('/addTheme', {
+                    method: 'POST',
+                    body: themeData
                 });
 
-                if (!response.ok) {
-                    throw new Error(`서버 오류: ${response.status} ${response.statusText}`);
-                }
-
                 const result = await response.json();
-
                 if (result.success) {
-                    alert(`"${themeName}"이 등록되었습니다.`);
-                    themeForm.reset();
-                    fileListContainer.innerHTML = ""; // 파일 목록 초기화
-                    location.reload(); // 페이지 새로고침하여 테마 목록 업데이트
+                    alert('테마가 성공적으로 등록되었습니다.');
+                    // 새로 추가된 테마의 관리 페이지로 이동
+                    window.location.href = `/mnhome?theme_code=${themeCodeValue}`;
                 } else {
-                    alert("테마 등록 실패: " + (result.message || "알 수 없는 오류가 발생했습니다."));
+                    alert(result.message || '테마 등록에 실패했습니다.');
+                    saveThemeButton.disabled = false;
                 }
             } catch (error) {
                 console.error("테마 등록 중 오류 발생", error);

@@ -3,7 +3,8 @@
 const { response } = require("express");
 const User = require("../models/user");  
 const Theme = require("../models/theme");
-const ThemeStorage = require("../models/themeStorage");
+const ThemeStorage = require("../models/themeStorage");  
+const NoticeStorage = require("../models/NoticeStorage");
 const fs = require('fs').promises;
 const path = require('path');
 
@@ -58,7 +59,7 @@ const output = {
 const process = {
     login: async (req, res) => {
         try {
-            const user = new User(req.body);
+        const user = new User(req.body);
             const loginResponse = await user.login();
             
             if (loginResponse.success) {
@@ -90,10 +91,62 @@ const process = {
         }
     },
 
+    getThemes: async (req, res) => {
+        try {
+            console.log('테마 목록 조회 시작');
+            const themes = await ThemeStorage.getThemes(true);
+            console.log('조회된 테마 목록:', themes);
+            res.json(themes);
+        } catch (error) {
+            console.error("테마 목록 조회 중 오류:", error);
+            res.status(500).json({ 
+                success: false, 
+                message: "테마 목록을 가져오는 중 오류가 발생했습니다." 
+            });
+        }
+    },
+
+    deleteTheme: async (req, res) => {
+        try {
+            const { theme_code } = req.body;
+            console.log('테마 삭제 요청:', { theme_code });
+            
+            if (!theme_code) {
+                console.log('테마 코드 누락');
+                return res.status(400).json({
+                    success: false,
+                    message: "테마 코드가 필요합니다."
+                });
+            }
+
+            console.log('ThemeStorage.deleteTheme 호출 전');
+            const result = await ThemeStorage.deleteTheme(theme_code);
+            console.log('삭제 결과:', result);
+            
+            if (result.success) {
+                res.json({
+                    success: true,
+                    message: "테마가 성공적으로 삭제되었습니다."
+                });
+            } else {
+                res.status(400).json({
+                    success: false,
+                    message: result.message || "테마 삭제에 실패했습니다."
+                });
+            }
+        } catch (error) {
+            console.error("테마 삭제 중 오류:", error);
+            res.status(500).json({
+                success: false,
+                message: "테마 삭제 중 오류가 발생했습니다."
+            });
+        }
+    },
+
     theme: async (req, res) => {
         try {
-            const { theme_name, theme_code, escape_time_minutes, available_hints, monitoring_places } = req.body;
-            
+        const { theme_name, theme_code, escape_time_minutes, available_hints, monitoring_places } = req.body;
+        
             // 유효성 검사
             if (!theme_name || !theme_code || !escape_time_minutes || !available_hints || !monitoring_places) {
                 return res.json({ success: false, message: "모든 필수 항목을 입력해주세요." });
@@ -171,13 +224,21 @@ const process = {
             console.log('입력된 테마 코드:', theme_code);
             console.log('저장된 테마 목록:', themes);
             
-            // 테마 배열에서 테마 코드 확인
-            const themeExists = themes.some(theme => theme.theme_code === theme_code);
+            // 테마 배열에서 테마 코드 확인 (문자열로 비교)
+            const themeExists = themes.some(theme => theme.theme_code === theme_code.toString());
 
-            return res.json({ 
-                success: themeExists,
-                message: themeExists ? "테마가 확인되었습니다." : "등록되지 않은 테마 코드입니다."
-            });
+            if (themeExists) {
+                return res.json({ 
+                    success: true,
+                    message: "테마가 확인되었습니다.",
+                    redirect: `/mnhome?theme_code=${theme_code}`
+                });
+            } else {
+                return res.json({ 
+                    success: false,
+                    message: "등록되지 않은 테마 코드입니다."
+                });
+            }
         } catch (error) {
             console.error("테마 코드 확인 중 오류 발생:", error);
             return res.json({ 
@@ -259,11 +320,19 @@ const process = {
             }
 
             const themes = await ThemeStorage.getThemes(false);
+            const theme = themes.themes.find(t => t.theme_code === theme_code);
+            
+            if (!theme) {
+                return res.status(404).json({
+                    success: false,
+                    msg: "테마를 찾을 수 없습니다."
+                });
+            }
             
             return res.json({
                 success: true,
-                hints: { [theme_code]: themes.hints[theme_code] || [] },
-                places: { [theme_code]: themes.places[theme_code] || [] }
+                hints: { [theme_code]: theme.hints || [] },
+                places: { [theme_code]: theme.places || [] }
             });
         } catch (error) {
             console.error("테마 데이터 조회 중 오류:", error);
@@ -271,6 +340,54 @@ const process = {
                 success: false,
                 msg: "테마 데이터 조회 중 오류가 발생했습니다."
             });
+        }
+    },
+
+    // 공지사항 저장
+    saveNotice: async (req, res) => {
+        console.log('공지사항 저장 요청 받음:', req.body);
+        const notice = req.body;
+        
+        if (!notice.content || !notice.created_at) {
+            console.error('잘못된 요청 데이터:', notice);
+            return res.status(400).json({
+                success: false,
+                msg: "공지사항 내용과 날짜는 필수입니다."
+            });
+        }
+
+        try {
+            console.log('NoticeStorage.save 호출 전...');
+            const response = await NoticeStorage.save(notice);
+            console.log('NoticeStorage.save 결과:', response);
+            return res.json(response);
+        } catch (err) {
+            console.error('공지사항 저장 중 오류 발생:', err);
+            return res.status(500).json({
+                success: false,
+                msg: err.msg || "서버에서 공지사항 저장 중 오류가 발생했습니다."
+            });
+        }
+    },
+
+    // 공지사항 목록 조회
+    getNotices: async (req, res) => {
+        try {
+            const notices = await NoticeStorage.getNotices();
+            return res.json(notices);
+        } catch (err) {
+            return res.json([]);
+        }
+    },
+
+    // 공지사항 삭제
+    deleteNotice: async (req, res) => {
+        const { notice_id } = req.body;
+        try {
+            const response = await NoticeStorage.delete(notice_id);
+            return res.json(response);
+        } catch (err) {
+            return res.json(err);
         }
     }
 };

@@ -11,7 +11,7 @@
         margin: auto;
         background-color: #2E2E2E;
         display: flex;
-        justify-content: space-around;
+        justify-content: center;
         align-items: center;
         position: relative;
       }
@@ -89,53 +89,6 @@
       }
       .theme-add-btn:focus:not(:disabled) {
         background-color: #939393;
-      }
-  
-      /* 테마 목록 섹션 */
-      .theme-list-section {
-        width: 500px;
-        max-height: 800px;
-        overflow-y: auto;
-        padding: 20px;
-        background-color: rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-      }
-  
-      .theme-list-title {
-        color: white;
-        font-size: 32px;
-        margin-bottom: 20px;
-        text-align: center;
-      }
-  
-      .theme-list {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-      }
-  
-      .theme-item {
-        background-color: rgba(255, 255, 255, 0.1);
-        padding: 20px;
-        border-radius: 10px;
-        color: white;
-      }
-  
-      .theme-item h3 {
-        font-size: 24px;
-        margin: 0 0 10px 0;
-        color: #3CA96F;
-      }
-  
-      .theme-item p {
-        margin: 5px 0;
-        font-size: 16px;
-      }
-  
-      .no-themes {
-        color: white;
-        text-align: center;
-        font-size: 18px;
       }
   
       /* 배경(오버레이) */

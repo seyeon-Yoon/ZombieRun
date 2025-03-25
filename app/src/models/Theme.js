@@ -1,6 +1,6 @@
 "use strict";
 
-const ThemeStorage = require("./themeStorage"); // 경로 수정
+const ThemeStorage = require("./themeStorage");
 
 class Theme {
     constructor(body) {

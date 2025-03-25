@@ -62,17 +62,20 @@ const upload = multer({
 });
 
 // 라우팅 기능 //output 메서드는 homeController.js에 있음
-router.get('/', ctrl.output.home); // 클라이언트가 '/' 경로로 GET요청을 보낼 때, ctrl(homeController) 파일에 정의된 output.home 메서드를 실행하여 해당 요청에 응답을 처리하라.
+router.get('/', ctrl.output.home);
 router.get('/login', ctrl.output.login);
-router.get('/addTheme', ctrl.output.theme);
-router.get('/mnhome', ctrl.output.mnhome);
 router.get('/keypad', ctrl.output.keypad);
-router.get("/map-popup", ctrl.output.mapPopup);
-router.get("/get-theme-data", ctrl.process.getThemeData);
+router.get('/mnhome', ctrl.output.mnhome);
+router.get('/addTheme', ctrl.output.theme);
+router.get('/mapPopup', ctrl.output.mapPopup);
+router.get('/get-themes', ctrl.process.getThemes);
+router.get('/get-theme-data', ctrl.process.getThemeData);
 
-router.post('/login', ctrl.process.login);  // userController에서 homeController로 변경
-router.post('/addTheme', upload.single('map_file'), ctrl.process.theme);
+// API 라우트
+router.post('/login', ctrl.process.login);
 router.post('/verify-theme-code', ctrl.process.verifyThemeCode);
+router.post('/addTheme', upload.single('map_file'), ctrl.process.theme);
 router.post('/save-theme-data', ctrl.process.saveThemeData);
+router.post('/delete-theme', ctrl.process.deleteTheme);
 
 module.exports = router;  // 외부에서도 사용할 수 있도록 내보내는 코드

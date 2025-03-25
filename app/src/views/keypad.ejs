@@ -112,11 +112,11 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    // 성공 시 테마 코드를 URL 파라미터로 전달하며 리다이렉트
-                    window.location.href = `/mnhome?theme_code=${currentCode}`;
+                    // 서버에서 제공하는 리다이렉션 URL 사용
+                    window.location.href = result.redirect;
                 } else {
                     // 실패 시 처리
-                    alert('등록되지 않은 테마 코드입니다.');
+                    alert(result.message);
                     currentCode = '';
                     updateDisplay();
                     shakeDisplay();

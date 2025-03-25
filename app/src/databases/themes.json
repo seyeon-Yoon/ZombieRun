@@ -1,38 +1,46 @@
 {
-  "theme_name": [
-    "테마1"
-  ],
-  "theme_code": [
-    "1234"
-  ],
-  "escape_time_minutes": [
-    "60"
-  ],
-  "available_hints": [
-    "5"
-  ],
-  "monitoring_places": [
-    "4"
-  ],
-  "map_file": [
-    "/uploads/maps/map1.jpg"
-  ],
-  "hints": {
-    "1234": [
-      {
-        "code": "1234",
-        "progress": 1,
-        "content": "1",
-        "answer": "1"
-      }
-    ]
-  },
-  "places": {
-    "1234": [
-      "g202",
-      "g203",
-      "g204",
-      "g205"
-    ]
-  }
+  "themes": [
+    {
+      "theme_name": "테마1",
+      "theme_code": "1234",
+      "escape_time_minutes": "60",
+      "available_hints": "5",
+      "monitoring_places": "4",
+      "map_file": "/uploads/maps/map1.jpg",
+      "hints": [
+        {
+          "code": "1234",
+          "progress": 1,
+          "content": "1",
+          "answer": "1"
+        }
+      ],
+      "places": [
+        "g202",
+        "g203",
+        "g204",
+        "g205"
+      ]
+    },
+    {
+      "theme_name": "테마2",
+      "theme_code": "2345",
+      "escape_time_minutes": "1",
+      "available_hints": "1",
+      "monitoring_places": "2",
+      "map_file": null,
+      "hints": [
+        {
+          "code": "5555",
+          "progress": 55,
+          "content": "5555555",
+          "answer": "555555"
+        }
+      ],
+      "places": [
+        null,
+        null
+      ]
+    }
+  ]
 }
