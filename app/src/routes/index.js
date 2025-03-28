@@ -66,7 +66,7 @@ router.get('/', ctrl.output.home);
 router.get('/login', ctrl.output.login);
 router.get('/keypad', ctrl.output.keypad);
 router.get('/mnhome', ctrl.output.mnhome);
-router.get('/addTheme', ctrl.output.theme);
+router.get('/theme', ctrl.output.theme);
 router.get('/mapPopup', ctrl.output.mapPopup);
 router.get('/get-themes', ctrl.process.getThemes);
 router.get('/get-theme-data', ctrl.process.getThemeData);
@@ -74,7 +74,7 @@ router.get('/get-theme-data', ctrl.process.getThemeData);
 // API 라우트
 router.post('/login', ctrl.process.login);
 router.post('/verify-theme-code', ctrl.process.verifyThemeCode);
-router.post('/addTheme', upload.single('map_file'), ctrl.process.theme);
+router.post('/theme', upload.single('map_file'), ctrl.process.theme);
 router.post('/save-theme-data', ctrl.process.saveThemeData);
 router.post('/delete-theme', ctrl.process.deleteTheme);
 
